@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         SONAR_TOKEN = credentials('sonarqube-token')
+        SCANNER_HOME = tool 'SonarScanner'
     }
 
     stages {
@@ -15,13 +16,13 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    sh """
-                    sonar-scanner \
+                    sh '''
+                    $SCANNER_HOME/bin/sonar-scanner \
                       -Dsonar.projectKey=my-project \
                       -Dsonar.sources=. \
                       -Dsonar.host.url=http://localhost:9000 \
                       -Dsonar.login=$SONAR_TOKEN
-                    """
+                    '''
                 }
             }
         }
@@ -31,6 +32,12 @@ pipeline {
                 timeout(time: 5, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
+            }
+        }
+    }
+}
+
+
             }
         }
     }
