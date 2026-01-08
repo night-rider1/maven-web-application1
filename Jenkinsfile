@@ -1,15 +1,38 @@
 pipeline {
     agent any
+
+    environment {
+        SONAR_TOKEN = credentials('sonarqube-token')
+    }
+
     stages {
-        stage('Clone') {
+        stage('Checkout') {
             steps {
-                echo 'Code cloned from GitHub'
+                checkout scm
             }
         }
-        stage('Build') {
+
+        stage('SonarQube Analysis') {
             steps {
-                echo 'Build started'
+                withSonarQubeEnv('SonarQube') {
+                    sh """
+                    sonar-scanner \
+                      -Dsonar.projectKey=my-project \
+                      -Dsonar.sources=. \
+                      -Dsonar.host.url=http://localhost:9000 \
+                      -Dsonar.login=$SONAR_TOKEN
+                    """
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
             }
         }
     }
 }
+
